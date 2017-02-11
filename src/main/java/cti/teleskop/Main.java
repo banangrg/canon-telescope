@@ -11,12 +11,15 @@ import javafx.stage.Stage;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 
 public class Main {
 
+    static final CanonCamera camera = new CanonCamera();
 //    public static void main(String[] args) {
 
 //        CanonCamera slr = new CanonCamera();
@@ -63,19 +66,24 @@ public class Main {
 
 
     public static void main( final String[] args ) throws InterruptedException {
-        final CanonCamera camera = new CanonCamera();
         if ( camera.openSession() ) {
             if ( camera.beginLiveView() ) {
                 final JFrame frame = new JFrame( "Live view" );
+                final Dimension liveViewDims = new Dimension(1280,960);
                 final JLabel label = new JLabel();
 
-                double newWidth = frame.getContentPane().getBounds().getWidth() * 2;
-                double newHeight = frame.getContentPane().getBounds().getHeight() * 2;
+                final JPanel panel = new JPanel(new GridBagLayout());
+                addShootButton(panel);
+
+                double width = frame.getContentPane().getBounds().getWidth();
+                double height = frame.getContentPane().getBounds().getHeight();
                 double x = frame.getContentPane().getBounds().getX();
                 double y = frame.getContentPane().getBounds().getY();
 
-                frame.getContentPane().setBounds((int)x, (int)y, (int)newWidth, (int)newHeight);
+                frame.getContentPane().setBounds((int)x, (int)y, (int)width, (int)height);
                 frame.getContentPane().add( label, BorderLayout.CENTER );
+                frame.getContentPane().add(panel, BorderLayout.SOUTH);
+
                 frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
                 frame.addWindowListener( new WindowAdapter() {
 
@@ -87,6 +95,8 @@ public class Main {
                         System.exit( 0 );
                     }
                 } );
+
+                alignFrameToLeft(frame, liveViewDims);
                 frame.setVisible( true );
 
                 while ( true ) {
@@ -108,5 +118,25 @@ public class Main {
         }
         CanonCamera.close();
         System.exit( 0 );
+    }
+
+    private static void addShootButton(JPanel gridPanel) {
+        JButton button = new JButton("Take a snap!");
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                camera.shoot();
+                camera.beginLiveView();
+            }
+        });
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gridPanel.add(button, gbc);
+    }
+
+    private static void alignFrameToLeft(JFrame frame, Dimension liveViewDims) {
+        Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
+        frame.setLocation((int)(dimension.getWidth() - liveViewDims.getWidth()), frame.getLocation().y);
     }
 }
